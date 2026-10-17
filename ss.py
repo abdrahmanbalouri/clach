@@ -1,9 +1,12 @@
+import math
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.parse import quote
 
 import requests
+from requests.adapters import HTTPAdapter
 
 BASE_URL = "https://api.clashroyale.com/v1"
 
@@ -32,18 +35,17 @@ API_KEY = os.getenv("CLASH_ROYALE_API_KEY")
 HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 MAX_PAGES = 600
-PAGE_SIZE = 50
-RANK_RANGE = 30                 # ranks above/below yours (30 => up to 60 players)
-PAGES_AFTER_FOUND = RANK_RANGE // PAGE_SIZE + 1
+PAGE_SIZE = 1000                # big pages = far fewer requests (falls back to 50)
+RANK_RANGE = 50                 # leaderboard ranks above/below yours to consider
 
-ACTIVE_MINUTES = 15             # played a battle in the last N minutes = "active"
-MAX_ACTIVITY_CHECKS = 200       # max players whose battle log we check
-ACTIVITY_DELAY = 0.15           # pause between checks (avoid rate limit)
+RESULTS_COUNT = 10              # how many players to show
+ACTIVE_MINUTES = 15             # played a ranked battle in the last N minutes = "active"
+MAX_ACTIVITY_CHECKS = 150       # max players whose battle log we check
 
-RESULTS_COUNT = 60              # max active players to show (outside top 10,000)
-CHECK_COUNT = 150               # closest players (by ELO) checked for activity
-MAX_CRAWL = 60                  # max battle logs read to grow the player pool
-MAX_POOL = 20                  # max players to scan for closeness
+MAX_POOL = 300                  # max players scanned (outside top 10,000)
+MAX_CRAWL = 30                  # max battle logs read to grow the player pool
+
+WORKERS = 10                    # parallel requests (lower it if you get 429 errors)
 
 OUTPUT_FILE = "ranked_report.txt"
 
@@ -51,6 +53,10 @@ OUTPUT_FILE = "ranked_report.txt"
 # allows one of them, so a 403 invalid-IP answer is often temporary.
 IP_RETRIES = 6
 IP_RETRY_DELAY = 0.5
+
+session = requests.Session()
+session.mount("https://", HTTPAdapter(pool_connections=WORKERS,
+                                       pool_maxsize=WORKERS))
 
 report_lines = []
 
@@ -73,7 +79,7 @@ def api_get(endpoint, params=None):
     last_ip_error = None
 
     for attempt in range(IP_RETRIES):
-        response = requests.get(
+        response = session.get(
             BASE_URL + endpoint,
             headers=HEADERS,
             params=params,
@@ -107,6 +113,19 @@ def api_get(endpoint, params=None):
     )
 
 
+def safe(func, *args):
+    """Run an API call, return None instead of raising (for parallel use)."""
+    try:
+        return func(*args)
+    except (RuntimeError, requests.RequestException):
+        return None
+
+
+def parallel_map(func, items):
+    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        return list(pool.map(func, items))
+
+
 def get_player(tag):
     return api_get("/players/" + quote(tag, safe=""))
 
@@ -119,18 +138,27 @@ def get_global_rankings(stop_after_tag=None):
     # Current (live) season leaderboard
     endpoint = "/locations/global/pathoflegend/players"
 
+    page_size = PAGE_SIZE
     players = []
     cursor = None
     found = False
     pages_after_found = 0
 
     for _ in range(MAX_PAGES):
-        params = {"limit": PAGE_SIZE}
+        params = {"limit": page_size}
 
         if cursor:
             params["after"] = cursor
 
-        data = api_get(endpoint, params)
+        try:
+            data = api_get(endpoint, params)
+        except requests.HTTPError:
+            # The API refused the big page size: use the safe one.
+            if page_size > 50 and not players:
+                page_size = 50
+                continue
+            raise
+
         items = data.get("items", [])
         players.extend(items)
 
@@ -141,7 +169,7 @@ def get_global_rankings(stop_after_tag=None):
 
         if found:
             pages_after_found += 1
-            if pages_after_found > PAGES_AFTER_FOUND:
+            if pages_after_found > math.ceil(RANK_RANGE / page_size):
                 break
 
         cursor = data.get("paging", {}).get("cursors", {}).get("after")
@@ -163,13 +191,16 @@ def parse_battle_time(value):
 
 
 def minutes_since_last_battle(tag):
-    """Minutes since the player's most recent battle (None if unknown)."""
-    try:
-        battles = get_battlelog(tag)
-    except (RuntimeError, requests.RequestException):
+    """Minutes since the player's most recent RANKED battle (None if none)."""
+    battles = safe(get_battlelog, tag)
+    if not battles:
         return None
 
-    times = [parse_battle_time(b.get("battleTime")) for b in battles]
+    times = [
+        parse_battle_time(b.get("battleTime"))
+        for b in battles
+        if "pathoflegend" in str(b.get("type", "")).lower()
+    ]
     times = [t for t in times if t is not None]
     if not times:
         return None
@@ -178,19 +209,41 @@ def minutes_since_last_battle(tag):
     return max(delta.total_seconds() / 60, 0)
 
 
-def add_activity(candidates):
-    """Fill the 'minutes' field of each candidate using its battle log."""
-    todo = candidates[:MAX_ACTIVITY_CHECKS]
-    out(f"\nChecking recent activity of {len(todo)} players...")
+def is_active(candidate):
+    minutes = candidate.get("minutes")
+    return minutes is not None and minutes <= ACTIVE_MINUTES
 
-    for candidate in todo:
-        candidate["minutes"] = minutes_since_last_battle(candidate["tag"])
-        time.sleep(ACTIVITY_DELAY)
+
+def pick_closest(candidates):
+    """candidates must be sorted from closest to farthest.
+
+    Checks battle logs in parallel chunks, closest players first, and
+    stops as soon as RESULTS_COUNT active players are found. If not
+    enough players are active, the closest inactive ones fill the rest.
+    """
+    out("\nChecking who is active (closest players first)...")
+    active, inactive = [], []
+    chunk_size = WORKERS * 2
+    todo = candidates[:MAX_ACTIVITY_CHECKS]
+
+    for start in range(0, len(todo), chunk_size):
+        chunk = todo[start:start + chunk_size]
+        minutes_list = parallel_map(
+            lambda c: minutes_since_last_battle(c["tag"]), chunk
+        )
+        for candidate, minutes in zip(chunk, minutes_list):
+            candidate["minutes"] = minutes
+            (active if is_active(candidate) else inactive).append(candidate)
+
+        if len(active) >= RESULTS_COUNT:
+            break
+
+    return active[:RESULTS_COUNT], inactive
 
 
 def format_minutes(minutes):
     if minutes is None:
-        return "unknown"
+        return "no ranked battle in log"
     if minutes < 60:
         return f"{int(minutes)} min ago"
     if minutes < 60 * 24:
@@ -199,34 +252,35 @@ def format_minutes(minutes):
 
 
 def describe(candidate):
-    parts = []
+    parts = [candidate.get("name", "Unknown"), candidate["tag"]]
     if candidate.get("rank") is not None:
-        parts.append(f"#{candidate['rank']}")
-    parts.append(candidate.get("name", "Unknown"))
-    parts.append(candidate["tag"])
+        parts.append(f"Rank #{candidate['rank']}")
     if candidate.get("elo") is not None:
         parts.append(f"ELO {candidate['elo']}")
+    if candidate.get("gap_text"):
+        parts.append(candidate["gap_text"])
     parts.append(f"Clan: {candidate.get('clan', 'No clan')}")
-    parts.append(f"Last battle: {format_minutes(candidate.get('minutes'))}")
+    parts.append(
+        f"Last ranked battle: {format_minutes(candidate.get('minutes'))}"
+    )
     return " | ".join(parts)
 
 
-def print_candidates(title, candidates):
-    active = [
-        c for c in candidates
-        if c.get("minutes") is not None and c["minutes"] <= ACTIVE_MINUTES
-    ]
-    active.sort(key=lambda c: c["minutes"])
-
+def show_result(title, active, inactive):
     out(
-        f"\n--- {title}: ACTIVE NOW "
-        f"(battle in last {ACTIVE_MINUTES} min) - {len(active)} found ---"
+        f"\n--- {title}: {len(active)} ACTIVE NOW "
+        f"(ranked battle in last {ACTIVE_MINUTES} min) ---"
     )
-    if active:
-        for c in active:
-            out(describe(c))
-    else:
-        out("Nobody from this list played recently.")
+    if not active:
+        out("Nobody close to you played recently.")
+    for i, c in enumerate(active, 1):
+        out(f"{i}. {describe(c)}")
+
+    missing = RESULTS_COUNT - len(active)
+    if missing > 0 and inactive:
+        out(f"\n--- NEXT CLOSEST (no ranked battle in last {ACTIVE_MINUTES} min) ---")
+        for i, c in enumerate(inactive[:missing], len(active) + 1):
+            out(f"{i}. {describe(c)}")
 
 
 def run_leaderboard_mode(player_info, players, me):
@@ -253,17 +307,19 @@ def run_leaderboard_mode(player_info, players, me):
             "tag": p.get("tag", "N/A"),
             "elo": p.get("eloRating"),
             "clan": (p.get("clan") or {}).get("name", "No clan"),
+            "diff": abs(rank - my_rank),
+            "gap_text": f"{rank - my_rank:+d} ranks",
         })
 
-    candidates.sort(key=lambda c: c["rank"])
-    add_activity(candidates)
-    print_candidates(f"PLAYERS WITHIN ±{RANK_RANGE} RANKS", candidates)
+    candidates.sort(key=lambda c: (c["diff"], c["rank"]))
+    active, inactive = pick_closest(candidates)
+    show_result("CLOSEST PLAYERS TO YOUR RANK", active, inactive)
 
 
 def ranked_opponents(battles):
     """Opponents (tag + name) from Path of Legend battles only."""
     found = []
-    for battle in battles:
+    for battle in battles or []:
         if "pathoflegend" not in str(battle.get("type", "")).lower():
             continue
         for opp in battle.get("opponent", []):
@@ -304,39 +360,36 @@ def run_fallback_mode(player_info, players):
             "can't find close players.")
         return
 
-    # 1) Build the pool: my opponents + their opponents
+    # 1) Build the pool: my opponents + their opponents (in parallel)
     print("\nBuilding player pool from battle logs...")
     pool = {}
     for opp in ranked_opponents(get_battlelog(player_info["tag"])):
         pool[opp["tag"].upper()] = opp
 
-    queue = list(pool.values())
-    index = 0
+    frontier = list(pool.values())
     crawled = 0
-    while index < len(queue) and len(pool) < MAX_POOL and crawled < MAX_CRAWL:
-        opp = queue[index]
-        index += 1
-        try:
-            battles = get_battlelog(opp["tag"])
-        except (RuntimeError, requests.RequestException):
-            continue
-        crawled += 1
-        for extra in ranked_opponents(battles):
-            key = extra["tag"].upper()
-            if key not in pool and len(pool) < MAX_POOL:
-                pool[key] = extra
-                queue.append(extra)
-        time.sleep(ACTIVITY_DELAY)
+    while frontier and len(pool) < MAX_POOL and crawled < MAX_CRAWL:
+        batch = frontier[:MAX_CRAWL - crawled]
+        frontier = []
+        crawled += len(batch)
+        logs = parallel_map(lambda o: safe(get_battlelog, o["tag"]), batch)
+        for battles in logs:
+            for extra in ranked_opponents(battles):
+                key = extra["tag"].upper()
+                if key not in pool and len(pool) < MAX_POOL:
+                    pool[key] = extra
+                    frontier.append(extra)
 
     pool.pop(my_tag, None)
 
-    # 2) Read the real ranked result of every pool player
+    # 2) Read the real ranked result of every pool player (in parallel)
     print(f"Reading ranked profiles of {len(pool)} players...")
+    pool_list = list(pool.values())
+    profiles = parallel_map(lambda c: safe(get_player, c["tag"]), pool_list)
+
     candidates = []
-    for key, cand in pool.items():
-        try:
-            profile = get_player(cand["tag"])
-        except (RuntimeError, requests.RequestException):
+    for cand, profile in zip(pool_list, profiles):
+        if not profile:
             continue
         res = profile.get("currentPathOfLegendSeasonResult") or {}
         trophies = res.get("trophies")
@@ -347,39 +400,17 @@ def run_fallback_mode(player_info, players):
         cand["league"] = res.get("leagueNumber")
         cand["rank"] = res.get("rank")
         cand["diff"] = abs(trophies - my_trophies)
+        cand["gap_text"] = f"diff {cand['diff']}"
         candidates.append(cand)
-        time.sleep(ACTIVITY_DELAY)
 
     if not candidates:
         out("\nNo players with a ranked result were found.")
         return
 
-    # 3) Check activity of the closest, keep only the active ones
+    # 3) Closest by ELO first; keep the first RESULTS_COUNT active ones
     candidates.sort(key=lambda c: c["diff"])
-    candidates = candidates[:CHECK_COUNT]
-    add_activity(candidates)
-
-    active = [
-        c for c in candidates
-        if c.get("minutes") is not None and c["minutes"] <= ACTIVE_MINUTES
-    ]
-    active.sort(key=lambda c: c["diff"])
-    active = active[:RESULTS_COUNT]
-
-    out(
-        f"\n--- CLOSEST TO YOU & ACTIVE NOW (last {ACTIVE_MINUTES} min) "
-        f"- {len(active)} found ---"
-    )
-    if not active:
-        out("Nobody close to you played recently. Try a bigger "
-            "ACTIVE_MINUTES or MAX_POOL.")
-    for c in active:
-        out(
-            f"{c['name']} | {c['tag']} | ELO {c['elo']} "
-            f"(diff {c['diff']}) | League {c.get('league', 'N/A')} "
-            f"| Clan: {c.get('clan', 'No clan')} "
-            f"| Last battle: {format_minutes(c.get('minutes'))}"
-        )
+    active, inactive = pick_closest(candidates)
+    show_result("CLOSEST PLAYERS TO YOUR ELO", active, inactive)
 
 
 def main():
@@ -392,6 +423,8 @@ def main():
 
     if not tag.startswith("#"):
         tag = "#" + tag
+
+    started = time.time()
 
     try:
         player_info = get_player(tag)
@@ -424,10 +457,11 @@ def main():
             run_leaderboard_mode(player_info, players, me)
 
         out(
-            "\nNote: 'Active' means the player finished a battle in the "
+            "\nNote: 'Active' means the player finished a RANKED battle in the "
             f"last {ACTIVE_MINUTES} minutes. The API has no real online "
             "status, and the battle log can lag a little."
         )
+        out(f"Done in {time.time() - started:.1f} seconds.")
         save_report()
 
     except requests.RequestException as error:

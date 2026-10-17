@@ -1,4 +1,4 @@
-Report generated: 2026-10-17 13:02:14
+Report generated: 2026-10-17 13:51:39
 Player: raji_sama
 Tag: #PPRC2JY89
 
@@ -8,15 +8,21 @@ Your account wasn't found in the leaderboard (1000 players downloaded). You are 
 League: 7
 Trophies/ELO: 2093
 Rank: outside top 10,000
-Leaderboard cutoff: rank #1000 = ELO 2140
+Leaderboard cutoff: rank #1000 = ELO 2141
 
-Checking recent activity of 20 players...
+Checking who is active (closest players first)...
 
---- CLOSEST TO YOU & ACTIVE NOW (last 15 min) - 5 found ---
-Skoot | #UR99PP98 | ELO 2119 (diff 26) | League 7 | Clan: No clan | Last battle: 2 min ago
-Kybalion ♏シヴァ | #JQV8L0PY0 | ELO 2138 (diff 45) | League 7 | Clan: WeWantBLΘΘD | Last battle: 2 min ago
-omsvrz | #80LVGCJPG | ELO 2001 (diff 92) | League 7 | Clan: YT Turan CR | Last battle: 6 min ago
-Wl \ Astimi | #UULGGVPCP | ELO 1982 (diff 111) | League 7 | Clan: Sandstorm | Last battle: 3 min ago
-ヨッコー | #V80RV00LU | ELO 1854 (diff 239) | League 7 | Clan: los pumas | Last battle: 1 min ago
+--- CLOSEST PLAYERS TO YOUR ELO: 10 ACTIVE NOW (ranked battle in last 15 min) ---
+1. XdefensivWin__ | #2RGQGP2P | Rank #2389 | ELO 2084 | diff 9 | Clan: VANTA eSports | Last ranked battle: 1 min ago
+2. <c4>HOA❤️N1X | #209JPURC0L | ELO 2071 | diff 22 | Clan: No clan | Last ranked battle: 2 min ago
+3. YT: AMlR CR☺️ | #V9GVVUCL2 | Rank #1062 | ELO 2123 | diff 30 | Clan: Iran Hplow | Last ranked battle: 2 min ago
+4. Skoot | #UR99PP98 | ELO 2056 | diff 37 | Clan: No clan | Last ranked battle: 2 min ago
+5. Aza Chobe | #PC9P28UCJ | Rank #1364 | ELO 2051 | diff 42 | Clan: NoA | Last ranked battle: 0 min ago
+6. Captain Ali | #L9JYJYYUR | Rank #6714 | ELO 2046 | diff 47 | Clan: JORDAN | Last ranked battle: 0 min ago
+7. ✨Ars❤️Ahoo✨ | #UVJ2CR2P8 | Rank #999 | ELO 2141 | diff 48 | Clan: 20 win | Last ranked battle: 0 min ago
+8. ~Ste2.6~ | #YQ9R0QR8C | Rank #6031 | ELO 2034 | diff 59 | Clan: Amik家 | Last ranked battle: 8 min ago
+9. ⚡Chris-CoachCr⚡ | #UP0QRRPU | Rank #834 | ELO 2173 | diff 80 | Clan: 20 W COACHING | Last ranked battle: 2 min ago
+10. D9 I Spyhunter⚡ | #8Y0URG20G | Rank #1442 | ELO 2009 | diff 84 | Clan: Golden Power | Last ranked battle: 3 min ago
 
-Note: 'Active' means the player finished a battle in the last 15 minutes. The API has no real online status, and the battle log can lag a little.
+Note: 'Active' means the player finished a RANKED battle in the last 15 minutes. The API has no real online status, and the battle log can lag a little.
+Done in 11.7 seconds.
