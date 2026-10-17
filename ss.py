@@ -33,15 +33,17 @@ HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 MAX_PAGES = 600
 PAGE_SIZE = 50
-RANK_RANGE = 10                 # ranks above/below yours to check
+RANK_RANGE = 30                 # ranks above/below yours (30 => up to 60 players)
 PAGES_AFTER_FOUND = RANK_RANGE // PAGE_SIZE + 1
 
 ACTIVE_MINUTES = 15             # played a battle in the last N minutes = "active"
-MAX_ACTIVITY_CHECKS = 60        # max players whose battle log we check
+MAX_ACTIVITY_CHECKS = 200       # max players whose battle log we check
 ACTIVITY_DELAY = 0.15           # pause between checks (avoid rate limit)
 
-RESULTS_COUNT = 20              # closest players to show (outside top 10,000)
-MAX_POOL = 80                   # max players to scan for closeness
+RESULTS_COUNT = 60              # max active players to show (outside top 10,000)
+CHECK_COUNT = 150               # closest players (by ELO) checked for activity
+MAX_CRAWL = 60                  # max battle logs read to grow the player pool
+MAX_POOL = 20                  # max players to scan for closeness
 
 OUTPUT_FILE = "ranked_report.txt"
 
@@ -210,23 +212,21 @@ def describe(candidate):
 
 
 def print_candidates(title, candidates):
-    is_active = lambda c: (
-        c.get("minutes") is not None and c["minutes"] <= ACTIVE_MINUTES
-    )
-    active = [c for c in candidates if is_active(c)]
+    active = [
+        c for c in candidates
+        if c.get("minutes") is not None and c["minutes"] <= ACTIVE_MINUTES
+    ]
     active.sort(key=lambda c: c["minutes"])
 
-    out(f"\n--- {title}: ACTIVE NOW (battle in last {ACTIVE_MINUTES} min) ---")
+    out(
+        f"\n--- {title}: ACTIVE NOW "
+        f"(battle in last {ACTIVE_MINUTES} min) - {len(active)} found ---"
+    )
     if active:
         for c in active:
             out(describe(c))
     else:
-        out("Nobody from this list played in the last "
-            f"{ACTIVE_MINUTES} minutes.")
-
-    out(f"\n--- {title}: ALL ---")
-    for c in candidates:
-        out(describe(c))
+        out("Nobody from this list played recently.")
 
 
 def run_leaderboard_mode(player_info, players, me):
@@ -310,18 +310,22 @@ def run_fallback_mode(player_info, players):
     for opp in ranked_opponents(get_battlelog(player_info["tag"])):
         pool[opp["tag"].upper()] = opp
 
-    first_degree = list(pool.values())
-    for opp in first_degree:
-        if len(pool) >= MAX_POOL:
-            break
+    queue = list(pool.values())
+    index = 0
+    crawled = 0
+    while index < len(queue) and len(pool) < MAX_POOL and crawled < MAX_CRAWL:
+        opp = queue[index]
+        index += 1
         try:
             battles = get_battlelog(opp["tag"])
         except (RuntimeError, requests.RequestException):
             continue
+        crawled += 1
         for extra in ranked_opponents(battles):
-            if len(pool) >= MAX_POOL:
-                break
-            pool.setdefault(extra["tag"].upper(), extra)
+            key = extra["tag"].upper()
+            if key not in pool and len(pool) < MAX_POOL:
+                pool[key] = extra
+                queue.append(extra)
         time.sleep(ACTIVITY_DELAY)
 
     pool.pop(my_tag, None)
@@ -350,9 +354,9 @@ def run_fallback_mode(player_info, players):
         out("\nNo players with a ranked result were found.")
         return
 
-    # 3) Keep only the closest, then check who is active
+    # 3) Check activity of the closest, keep only the active ones
     candidates.sort(key=lambda c: c["diff"])
-    candidates = candidates[:RESULTS_COUNT]
+    candidates = candidates[:CHECK_COUNT]
     add_activity(candidates)
 
     active = [
@@ -360,25 +364,22 @@ def run_fallback_mode(player_info, players):
         if c.get("minutes") is not None and c["minutes"] <= ACTIVE_MINUTES
     ]
     active.sort(key=lambda c: c["diff"])
+    active = active[:RESULTS_COUNT]
 
-    def line(c):
-        return (
+    out(
+        f"\n--- CLOSEST TO YOU & ACTIVE NOW (last {ACTIVE_MINUTES} min) "
+        f"- {len(active)} found ---"
+    )
+    if not active:
+        out("Nobody close to you played recently. Try a bigger "
+            "ACTIVE_MINUTES or MAX_POOL.")
+    for c in active:
+        out(
             f"{c['name']} | {c['tag']} | ELO {c['elo']} "
             f"(diff {c['diff']}) | League {c.get('league', 'N/A')} "
             f"| Clan: {c.get('clan', 'No clan')} "
             f"| Last battle: {format_minutes(c.get('minutes'))}"
         )
-
-    out(f"\n--- CLOSEST TO YOU: ACTIVE NOW (last {ACTIVE_MINUTES} min) ---")
-    if active:
-        for c in active:
-            out(line(c))
-    else:
-        out("Nobody from the closest players played recently.")
-
-    out(f"\n--- CLOSEST TO YOU: ALL ({len(candidates)}) ---")
-    for c in candidates:
-        out(line(c))
 
 
 def main():
