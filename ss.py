@@ -38,7 +38,7 @@ MAX_PAGES = 600
 PAGE_SIZE = 1000                # big pages = far fewer requests (falls back to 50)
 RANK_RANGE = 50                 # leaderboard ranks above/below yours to consider
 
-RESULTS_COUNT = 10              # how many players to show
+RESULTS_COUNT = 20              # how many players to show
 ACTIVE_MINUTES = 15             # played a ranked battle in the last N minutes = "active"
 MAX_ACTIVITY_CHECKS = 150       # max players whose battle log we check
 

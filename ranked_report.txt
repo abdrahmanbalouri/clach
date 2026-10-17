@@ -1,4 +1,4 @@
-Report generated: 2026-10-17 13:51:39
+Report generated: 2026-10-17 15:21:09
 Player: raji_sama
 Tag: #PPRC2JY89
 
@@ -8,21 +8,31 @@ Your account wasn't found in the leaderboard (1000 players downloaded). You are 
 League: 7
 Trophies/ELO: 2093
 Rank: outside top 10,000
-Leaderboard cutoff: rank #1000 = ELO 2141
+Leaderboard cutoff: rank #1000 = ELO 2144
 
 Checking who is active (closest players first)...
 
---- CLOSEST PLAYERS TO YOUR ELO: 10 ACTIVE NOW (ranked battle in last 15 min) ---
-1. XdefensivWin__ | #2RGQGP2P | Rank #2389 | ELO 2084 | diff 9 | Clan: VANTA eSports | Last ranked battle: 1 min ago
-2. <c4>HOA❤️N1X | #209JPURC0L | ELO 2071 | diff 22 | Clan: No clan | Last ranked battle: 2 min ago
-3. YT: AMlR CR☺️ | #V9GVVUCL2 | Rank #1062 | ELO 2123 | diff 30 | Clan: Iran Hplow | Last ranked battle: 2 min ago
-4. Skoot | #UR99PP98 | ELO 2056 | diff 37 | Clan: No clan | Last ranked battle: 2 min ago
-5. Aza Chobe | #PC9P28UCJ | Rank #1364 | ELO 2051 | diff 42 | Clan: NoA | Last ranked battle: 0 min ago
-6. Captain Ali | #L9JYJYYUR | Rank #6714 | ELO 2046 | diff 47 | Clan: JORDAN | Last ranked battle: 0 min ago
-7. ✨Ars❤️Ahoo✨ | #UVJ2CR2P8 | Rank #999 | ELO 2141 | diff 48 | Clan: 20 win | Last ranked battle: 0 min ago
-8. ~Ste2.6~ | #YQ9R0QR8C | Rank #6031 | ELO 2034 | diff 59 | Clan: Amik家 | Last ranked battle: 8 min ago
-9. ⚡Chris-CoachCr⚡ | #UP0QRRPU | Rank #834 | ELO 2173 | diff 80 | Clan: 20 W COACHING | Last ranked battle: 2 min ago
-10. D9 I Spyhunter⚡ | #8Y0URG20G | Rank #1442 | ELO 2009 | diff 84 | Clan: Golden Power | Last ranked battle: 3 min ago
+--- CLOSEST PLAYERS TO YOUR ELO: 20 ACTIVE NOW (ranked battle in last 15 min) ---
+1. ارمن | #JYCGUQVP2 | Rank #4918 | ELO 2088 | diff 5 | Clan: RICH ESPORTS | Last ranked battle: 4 min ago
+2. Captain Ali | #L9JYJYYUR | Rank #6714 | ELO 2078 | diff 15 | Clan: JORDAN | Last ranked battle: 9 min ago
+3. صبحيtiktok | #UJ0YGV20V | Rank #1510 | ELO 2075 | diff 18 | Clan: الاقوياء | Last ranked battle: 1 min ago
+4. pappi | #LCYLJPPCC | Rank #1466 | ELO 2066 | diff 27 | Clan: boolin boys | Last ranked battle: 8 min ago
+5. Prabesh | #28LLRV98U | Rank #4805 | ELO 2124 | diff 31 | Clan: Eternity | Last ranked battle: 5 min ago
+6. ✨Ars❤️Ahoo✨ | #UVJ2CR2P8 | Rank #446 | ELO 2054 | diff 39 | Clan: 20 win | Last ranked battle: 1 min ago
+7. XdefensivWin__ | #2RGQGP2P | Rank #994 | ELO 2145 | diff 52 | Clan: VANTA eSports | Last ranked battle: 4 min ago
+8. YT: AMlR CR☺️ | #V9GVVUCL2 | Rank #1062 | ELO 2037 | diff 56 | Clan: Iran Hplow | Last ranked battle: 2 min ago
+9. <c4>HOA❤️N1X | #209JPURC0L | ELO 2036 | diff 57 | Clan: No clan | Last ranked battle: 3 min ago
+10. YT ALPEREN REİS | #PYC80009L | Rank #662 | ELO 2034 | diff 59 | Clan: Çatı Katı | Last ranked battle: 4 min ago
+11. زيف القرمز | #8PUVLCYCQ | Rank #899 | ELO 2032 | diff 61 | Clan: ︎︎ ︎︎ ︎︎g | Last ranked battle: 3 min ago
+12. Josuee❤️改恶R | #V0Y82J8QL | Rank #919 | ELO 2158 | diff 65 | Clan: Balloon Crew | Last ranked battle: 0 min ago
+13. Darioz | #9VJC2G20 | Rank #3020 | ELO 2027 | diff 66 | Clan: BoIIitiDiRooney | Last ranked battle: 6 min ago
+14. ~Jes7~ | #8RC2VCYR | Rank #899 | ELO 2163 | diff 70 | Clan: Clan #GJLLL9QC | Last ranked battle: 4 min ago
+15. Aza Chobe | #PC9P28UCJ | Rank #1364 | ELO 2022 | diff 71 | Clan: NoA | Last ranked battle: 5 min ago
+16. спарки стреляй! | #8LPVCPYQU | ELO 2012 | diff 81 | Clan: VALHALLA | Last ranked battle: 1 min ago
+17. Schulle | #LVUV8YULR | ELO 2005 | diff 88 | Clan: No clan | Last ranked battle: 9 min ago
+18. ~Ste2.6~ | #YQ9R0QR8C | Rank #6031 | ELO 2005 | diff 88 | Clan: Amik家 | Last ranked battle: 3 min ago
+19. Alaikgoat | #2YRUVUGLQ | ELO 2003 | diff 90 | Clan: Cash Pistache | Last ranked battle: 9 min ago
+20. YT:KennyCR | #PPQJVCRC | ELO 2000 | diff 93 | Clan: Granny Hipps | Last ranked battle: 1 min ago
 
 Note: 'Active' means the player finished a RANKED battle in the last 15 minutes. The API has no real online status, and the battle log can lag a little.
-Done in 11.7 seconds.
+Done in 11.9 seconds.
