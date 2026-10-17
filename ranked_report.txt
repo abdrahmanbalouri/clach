@@ -1,4 +1,4 @@
-Report generated: 2026-10-17 15:32:17
+Report generated: 2026-10-17 15:52:04
 Player: raji_sama
 Tag: #PPRC2JY89
 
@@ -8,16 +8,16 @@ Your account wasn't found in the leaderboard (1000 players downloaded). You are 
 League: 7
 Trophies/ELO: 2093
 Rank: outside top 10,000
-Leaderboard cutoff: rank #1000 = ELO 2144
+Leaderboard cutoff: rank #1000 = ELO 2145
 
 Checking who is active (closest players first)...
 
 --- CLOSEST PLAYERS TO YOUR ELO: 5 ACTIVE NOW (ranked battle in last 5 min) ---
-1. Darioz | #9VJC2G20 | Rank #3020 | ELO 2088 | diff 5 | Clan: BoIIitiDiRooney | Last ranked battle: 3 min ago
-2. صبحيtiktok | #UJ0YGV20V | Rank #1510 | ELO 2043 | diff 50 | Clan: الاقوياء | Last ranked battle: 3 min ago
-3. زيف القرمز | #8PUVLCYCQ | Rank #899 | ELO 2033 | diff 60 | Clan: ︎︎ ︎︎ ︎︎g | Last ranked battle: 0 min ago
-4. amir | #QP8QUUCP | ELO 2015 | diff 78 | Clan: ARJIXCR | Last ranked battle: 1 min ago
-5. Kampfholz | #JPUQRGQYU | Rank #864 | ELO 2171 | diff 78 | Clan: YT: Galaki_CR | Last ranked battle: 3 min ago
+1. Happen | #8L2YVR2QR | Rank #3139 | ELO 2100 | diff 7 | Clan: Legends | Last ranked battle: 4 min ago
+2. Code: Furkan | #989P0PCCR | Rank #584 | ELO 2064 | diff 29 | Clan: CODE : FURKAN | Last ranked battle: 2 min ago
+3. XdefensivWin__ | #2RGQGP2P | Rank #990 | ELO 2147 | diff 54 | Clan: VANTA eSports | Last ranked battle: 1 min ago
+4. спарки стреляй! | #8LPVCPYQU | ELO 2037 | diff 56 | Clan: VALHALLA | Last ranked battle: 0 min ago
+5. Schulle | #LVUV8YULR | ELO 2035 | diff 58 | Clan: No clan | Last ranked battle: 2 min ago
 
 Note: 'Active' means the player finished a RANKED battle in the last 5 minutes. The API has no real online status, and the battle log can lag a little.
-Done in 10.7 seconds.
+Done in 11.0 seconds.
