@@ -1,4 +1,4 @@
-Report generated: 2026-10-17 15:26:15
+Report generated: 2026-10-17 15:32:17
 Player: raji_sama
 Tag: #PPRC2JY89
 
@@ -13,11 +13,11 @@ Leaderboard cutoff: rank #1000 = ELO 2144
 Checking who is active (closest players first)...
 
 --- CLOSEST PLAYERS TO YOUR ELO: 5 ACTIVE NOW (ranked battle in last 5 min) ---
-1. ✨Ars❤️Ahoo✨ | #UVJ2CR2P8 | Rank #446 | ELO 2084 | diff 9 | Clan: 20 win | Last ranked battle: 3 min ago
-2. Code: Furkan | #989P0PCCR | Rank #584 | ELO 2067 | diff 26 | Clan: CODE : FURKAN | Last ranked battle: 0 min ago
-3. YT: AMlR CR☺️ | #V9GVVUCL2 | Rank #1062 | ELO 2067 | diff 26 | Clan: Iran Hplow | Last ranked battle: 3 min ago
-4. 挖土機 I Aerox ✨️ | #CLJCQ9PLL | ELO 2065 | diff 28 | Clan: Lightest Påth | Last ranked battle: 0 min ago
-5. Darioz | #9VJC2G20 | Rank #3020 | ELO 2057 | diff 36 | Clan: BoIIitiDiRooney | Last ranked battle: 3 min ago
+1. Darioz | #9VJC2G20 | Rank #3020 | ELO 2088 | diff 5 | Clan: BoIIitiDiRooney | Last ranked battle: 3 min ago
+2. صبحيtiktok | #UJ0YGV20V | Rank #1510 | ELO 2043 | diff 50 | Clan: الاقوياء | Last ranked battle: 3 min ago
+3. زيف القرمز | #8PUVLCYCQ | Rank #899 | ELO 2033 | diff 60 | Clan: ︎︎ ︎︎ ︎︎g | Last ranked battle: 0 min ago
+4. amir | #QP8QUUCP | ELO 2015 | diff 78 | Clan: ARJIXCR | Last ranked battle: 1 min ago
+5. Kampfholz | #JPUQRGQYU | Rank #864 | ELO 2171 | diff 78 | Clan: YT: Galaki_CR | Last ranked battle: 3 min ago
 
 Note: 'Active' means the player finished a RANKED battle in the last 5 minutes. The API has no real online status, and the battle log can lag a little.
-Done in 10.0 seconds.
+Done in 10.7 seconds.

@@ -419,7 +419,7 @@ def main():
         print("Set your API key before running this program.")
         return
 
-    tag = input("Enter your Clash Royale Player Tag: ").strip().upper()
+    tag = "#PPRC2JY89"
 
     if not tag.startswith("#"):
         tag = "#" + tag
