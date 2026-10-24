@@ -44,7 +44,7 @@ active_base_idx = 0
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))
 MAX_RPS = float(os.getenv("MAX_RPS", "20"))
 HOT_WINDOW = int(os.getenv("HOT_WINDOW", "60"))
-FRESH_WINDOW = int(os.getenv("FRESH_WINDOW", "40"))          # HOT/alert ghir ila salla f akhir X tawani
+FRESH_WINDOW = int(os.getenv("FRESH_WINDOW", "10"))          # HOT/alert ghir ila salla f akhir X tawani
 STRICT_ELO_WINDOW = int(os.getenv("STRICT_ELO_WINDOW", "28"))
 RANGE_WINDOW = int(os.getenv("RANGE_WINDOW", "60"))
 MAX_TARGETS_TOTAL = int(os.getenv("MAX_TARGETS_TOTAL", "1000"))
@@ -888,7 +888,8 @@ def serialize():
     for t in tlist:
         pt = t.get("pol_trophies")
         band = elo_band_status(t, my_pol)
-        if band == "OUT" and t.get("source") != "manual":
+        just_finished = bool(t.get("hot_since") and now - t["hot_since"] <= 30)
+        if band == "OUT" and t.get("source") != "manual" and not just_finished:
             continue
 
         conf, grade = snipe_score(t, now, my_pol)
@@ -947,6 +948,11 @@ def serialize():
             "missed_ago": round(now - t["missed_at"]) if t.get("missed_at") else None,
             "source": t.get("source"), "error": t.get("error"),
             "analysis": build_analysis(t, now, my_pol, conf, grade, band),
+            "elo_before": t.get("starting_elo"),
+            "elo_after": pt,
+            "still_in_range": band in ("PRIME", "STRICT", "OUTER"),
+            "range_msg": ("ba9i f range" if band in ("PRIME", "STRICT", "OUTER") else "kharj mn range")
+                         + (f" ({'+' if pt - my_pol > 0 else ''}{pt - my_pol} mn ELO dyalk)" if (pt is not None and my_pol) else ""),
         })
 
     order = {"HOT": 0, "PLAYING": 1, "ACTIVE": 2, "COLD": 3, "OUT": 4}
@@ -995,13 +1001,15 @@ def hot_route():
     st = serialize()
     hot = [t for t in st["targets"] if t["status"] == "HOT" and t["in_range"]]
     hot.sort(key=lambda x: (-x["confidence"], x["abs_diff"]))
+    left = [t for t in st["targets"]
+            if t["band"] == "OUT" and t["seconds_since_end"] is not None and t["seconds_since_end"] <= 30]
     samples = list(lag_samples)
     def med(vals):
         vals = sorted(v for v in vals if v is not None)
         return vals[len(vals) // 2] if vals else None
     lag = {"n": len(samples), "pub_lag_median": med([a for a, _ in samples]),
            "our_delay_median": med([b for _, b in samples])}
-    return jsonify({"lag": lag, "me": st["me"], "hot": hot, "playing_soon": st["playing_soon"],
+    return jsonify({"lag": lag, "left": left, "me": st["me"], "hot": hot, "playing_soon": st["playing_soon"],
                     "counts": st["counts"], "api": st["api"]})
 
 
@@ -1038,9 +1046,17 @@ async function tick(){
    const c=el('div','card '+(t.analysis.verdict==='QUEUE NOW'?'now':(t.analysis.verdict.startsWith('QUEUE')?'maybe':'')));
    c.appendChild(el('span','t',(t.analysis.time_left??'')+'s'));
    c.appendChild(el('span','v',t.analysis.verdict+' ('+t.confidence+'% '+t.grade+')'));
-   c.appendChild(el('div','big',(t.name||'')+'  '+t.pol_trophies+' ('+(t.elo_diff>0?'+':'')+t.elo_diff+')'));
+   c.appendChild(el('div','big',(t.name||'')+'  '+(t.elo_before??'?')+' -> '+t.elo_after+' ('+(t.pol_delta>0?'+':'')+(t.pol_delta??0)+')'));
+   c.appendChild(el('div','r',(t.still_in_range?'OK: ':'KHARJ: ')+t.range_msg));
    c.appendChild(el('div','tag',t.tag+'  '+(t.crowns||'')+' '+(t.result||'')));
    c.appendChild(el('div','r',t.analysis.reasons.join(' • ')));
+   L.appendChild(c);
+  });
+  (d.left||[]).forEach(t=>{
+   const c=el('div','card');c.style.opacity='.6';
+   c.appendChild(el('span','v','KHARJ MN RANGE'));
+   c.appendChild(el('div','big',(t.name||'')+'  '+(t.elo_before??'?')+' -> '+t.elo_after+' ('+(t.pol_delta>0?'+':'')+(t.pol_delta??0)+')'));
+   c.appendChild(el('div','r',t.range_msg+' | salla men '+t.seconds_since_end+'s'));
    L.appendChild(c);
   });
  }catch(e){}
