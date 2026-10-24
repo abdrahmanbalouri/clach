@@ -1,2 +1,11 @@
 .venv/
+venv/
 __pycache__/
+.env
+pool_cache.json
+leaderboard_cache.json
+candidates_cache.json
+targets.json
+my_decks.json
+cards_cache.json
+*.pyc

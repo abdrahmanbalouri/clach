@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CR Snipe — Precision PoL Engine</title>
+<style>
+  :root{
+    --bg:#090d13; --card:#121821; --card2:#171f2c; --border:#253042;
+    --txt:#eef2f7; --muted:#8896ab; --hot:#ff334b; --prime:#00e676;
+    --strict:#29b6f6; --playing:#ffab00; --accent:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:14px;max-width:1240px;margin:auto}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px}
+  .h-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  h1{font-size:19px;font-weight:900;letter-spacing:.5px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--prime);display:inline-block;box-shadow:0 0 8px var(--prime)}
+  .dot.bad{background:var(--hot);box-shadow:0 0 8px var(--hot)}
+  .my-pill{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600}
+  .my-elo{color:var(--prime);font-weight:900;font-size:15px}
+  .stats-row{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .stat-chip{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px}
+  .stat-chip b{color:var(--txt)}
+
+  button{background:#1c2533;color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:600}
+  button:hover{border-color:var(--accent)}
+  button.active{background:var(--accent);color:#000;border-color:var(--accent)}
+  input{background:#090d13;color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px}
+
+  #banner{background:#3a1114;border:1px solid var(--hot);color:#ffb4ae;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;display:none}
+
+  /* BIG SNIPE COMMAND CENTER */
+  #bigstatus{border-radius:14px;padding:18px 22px;margin-bottom:12px;border:2px solid var(--border);background:var(--card);transition:all .2s}
+  #bigstatus.go{border-color:var(--hot);background:linear-gradient(180deg,#2d0b12 0%,#16090d 100%);animation:pulse 1s infinite}
+  #bigstatus.ready{border-color:var(--playing);background:linear-gradient(180deg,#291e08 0%,#141109 100%)}
+  @keyframes pulse{50%{box-shadow:0 0 36px rgba(255,51,75,.85)}}
+  .bs-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .bs-main{font-size:28px;font-weight:900;letter-spacing:.5px}
+  #bigstatus.go .bs-main{color:#fff}
+  .bs-prob{font-size:42px;font-weight:900;color:var(--prime);line-height:1}
+  .bs-sub{font-size:14px;color:#d0d8e4;margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .bs-pill{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 9px;font-weight:700;font-size:13px}
+  .confbar{height:8px;background:#090d13;border-radius:4px;overflow:hidden;margin-top:10px}
+  .confbar i{display:block;height:100%;background:linear-gradient(90deg,var(--prime),#ffb300,var(--hot));transition:width .3s}
+  .bs-deck{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .bs-deck img{width:46px;height:56px;border-radius:7px;border:1px solid rgba(255,255,255,.2);background:#090d13}
+
+  /* PLAYING NOW RADAR BAR */
+  #radar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:none}
+  .rad-title{font-size:12px;font-weight:800;color:var(--playing);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .rad-list{display:flex;gap:10px;flex-wrap:wrap}
+  .rad-item{background:var(--card2);border:1px solid rgba(255,171,0,.4);border-radius:8px;padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:8px}
+
+  /* CONTROLS */
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .filters{display:flex;gap:6px;flex-wrap:wrap}
+
+  /* TARGET CARDS */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(335px,1fr));gap:11px}
+  .tcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;position:relative;transition:transform .12s}
+  .tcard.HOT{border:2px solid var(--hot);box-shadow:0 0 18px rgba(255,51,75,.35);background:#1b1116}
+  .tcard.PLAYING{border:1.5px solid var(--playing);background:#191610}
+  .tcard.ACTIVE{border-color:#2f4058}
+  .thead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-right:20px}
+  .tname{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .elo-badge{font-size:13px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--card2);border:1px solid var(--border)}
+  .elo-badge.PRIME{color:var(--prime);border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.08)}
+  .elo-badge.STRICT{color:var(--strict);border-color:rgba(41,182,246,.4);background:rgba(41,182,246,.08)}
+  .elo-badge.OUTER{color:var(--muted)}
+  .delta{font-size:11px;font-weight:800;padding:1px 5px;border-radius:4px}
+  .delta.pos{color:var(--prime);background:rgba(0,230,118,.12)}
+  .delta.neg{color:var(--hot);background:rgba(255,51,75,.12)}
+
+  .tsub{color:var(--muted);font-size:11.5px;margin-top:3px}
+  .badge{font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;white-space:nowrap}
+  .badge.HOT{background:var(--hot);color:#fff}
+  .badge.PLAYING{background:var(--playing);color:#000}
+  .badge.ACTIVE{background:var(--strict);color:#000}
+  .badge.COLD{background:#1c2533;color:var(--muted)}
+
+  .snipe-line{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;padding:6px 9px;border-radius:8px;background:rgba(255,51,75,.12);border:1px solid rgba(255,51,75,.35)}
+  .snipe-line .pct{font-size:26px;font-weight:900;color:#fff}
+  .snipe-line .grade{font-size:12px;font-weight:900;color:var(--prime)}
+
+  .meta-line{font-size:12px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+  .meta-line b.W{color:var(--prime)} .meta-line b.L{color:var(--hot)}
+  .hit{font-size:12px;font-weight:800;margin-top:6px;padding:4px 8px;border-radius:6px}
+  .hit.ok{color:var(--prime);background:rgba(0,230,118,.12);border:1px solid var(--prime)}
+  .hit.miss{color:var(--hot);background:rgba(255,51,75,.12)}
+
+  .deckrow{display:flex;gap:4px;margin-top:8px}
+  .deckrow img{width:36px;height:44px;border-radius:5px;background:#090d13;object-fit:cover;border:1px solid #253042}
+  .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:2px}
+  .rm:hover{color:var(--hot)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <h1>🎯 CR SNIPE PRO</h1>
+    <span id="apidot" class="dot"></span>
+    <div class="my-pill" id="me">loading…</div>
+  </div>
+  <div class="stats-row" id="stats"></div>
+  <button id="snd">🔔 Sound: ON</button>
+</header>
+
+<div id="banner"></div>
+
+<div id="bigstatus">
+  <div class="bs-main">⏳ Scanning live Path of Legend matches…</div>
+</div>
+
+<div id="radar">
+  <div class="rad-title">📡 Fl-Match Daba (Predicted to finish in seconds — get ready!)</div>
+  <div class="rad-list" id="radlist"></div>
+</div>
+
+<div class="toolbar">
+  <div class="filters">
+    <button class="active" data-f="STRICT" onclick="setFilter('STRICT')">🎯 Matchmaking Range (±28)</button>
+    <button data-f="PRIME" onclick="setFilter('PRIME')">💎 Prime (±18)</button>
+    <button data-f="HOT" onclick="setFilter('HOT')">🔥 HOT & Playing Now</button>
+    <button data-f="ALL" onclick="setFilter('ALL')">🌐 All Tracked (±60)</button>
+  </div>
+  <div style="display:flex;gap:6px">
+    <input id="addtag" placeholder="#PLAYERTAG" size="14">
+    <button onclick="addTarget()">+ Track</button>
+  </div>
+</div>
+
+<div class="grid" id="targets"></div>
+
+<script>
+let state = null;
+let prevHot = new Set();
+let soundOn = localStorage.getItem("snd") !== "off";
+let filterMode = "STRICT";
+let actx = null;
+
+document.getElementById("snd").textContent = "🔔 Sound: " + (soundOn ? "ON" : "OFF");
+document.getElementById("snd").onclick = () => {
+  soundOn = !soundOn;
+  localStorage.setItem("snd", soundOn ? "on" : "off");
+  document.getElementById("snd").textContent = "🔔 Sound: " + (soundOn ? "ON" : "OFF");
+};
+
+function setFilter(f){
+  filterMode = f;
+  document.querySelectorAll(".filters button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.f === f);
+  });
+  render();
+}
+
+function beep(urgent=true){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const notes = urgent ? [0, 140, 280, 420] : [0, 180];
+    notes.forEach((d,i)=>{
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.value = urgent ? (920 + i*180) : (660 + i*140);
+      g.gain.setValueAtTime(.18, actx.currentTime + d/1000);
+      o.start(actx.currentTime + d/1000);
+      o.stop(actx.currentTime + d/1000 + .12);
+    });
+  }catch(e){}
+}
+
+function esc(s){return (s??"").toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function ago(s){
+  if(s==null) return "?";
+  s = Math.max(0, Math.round(s));
+  if(s < 60) return s + "s";
+  if(s < 3600) return Math.floor(s/60) + "m " + (s%60) + "s";
+  return Math.floor(s/3600) + "h";
+}
+
+function liveScore(t, st){
+  if(!t.hot_since || !st.me.pol_trophies || t.pol_trophies == null) return 0;
+  const dt = Date.now()/1000 - t.hot_since;
+  if(dt < 0 || dt > st.hot_window) return 0;
+  if(t.missed_ago != null && t.missed_ago <= dt) return 0;
+  const diff = Math.abs(t.pol_trophies - st.me.pol_trophies);
+  if(diff > 45) return 0;
+  let s = diff <= 10 ? 96 : diff <= 18 ? 92 : diff <= st.strict_window ? 84 : 42;
+  if(dt <= 18) {}
+  else if(dt <= 32) s -= 5;
+  else if(dt <= 45) s -= 16;
+  else s -= 32;
+  if((t.last_gap != null && t.last_gap <= 230) || (t.median_gap != null && t.median_gap <= 240)) s += 5;
+  else if(t.median_gap != null && t.median_gap <= 320) s += 3;
+  else if(t.median_gap != null && t.median_gap >= 700) s -= 18;
+  if((t.games_last_hour || 0) >= 4) s += 2;
+  return Math.max(0, Math.min(99, Math.round(s)));
+}
+
+function render(){
+  if(!state) return;
+  const st = state;
+  document.getElementById("apidot").className = "dot" + (st.api.ok ? "" : " bad");
+
+  const myPol = st.me.pol_trophies;
+  const myDelta = st.me.pol_delta;
+  const dStr = myDelta != null ? ` (${myDelta>=0?"+":""}${myDelta} akher match)` : "";
+  document.getElementById("me").innerHTML =
+    `${esc(st.me.name || st.me.tag)} · <span class="my-elo">⭐ ${myPol ?? "?"}</span><span style="color:var(--muted);font-size:12px">${esc(dStr)} · MM band: ±${st.strict_window} (avg diff: ±${st.me.mm_avg_diff ?? 9})</span>`;
+
+  const c = st.counts || {};
+  document.getElementById("stats").innerHTML = `
+    <span class="stat-chip">💎 Prime (±18): <b>${c.prime ?? 0}</b></span>
+    <span class="stat-chip">🎯 In MM Range (±${st.strict_window}): <b>${c.strict ?? 0}</b></span>
+    <span class="stat-chip">📡 Playing Now: <b>${c.playing ?? 0}</b></span>
+    <span class="stat-chip">🌐 Total (±60): <b>${c.total ?? 0}</b></span>
+  `;
+
+  const banner = document.getElementById("banner");
+  if(!st.api.ok && st.api.error){
+    banner.style.display = "block";
+    banner.innerHTML = "⚠️ " + esc(st.api.error);
+  } else banner.style.display = "none";
+
+  // Recompute live countdowns & scores every second
+  const nowSec = Date.now()/1000;
+  const live = st.targets.map(t => {
+    const conf = liveScore(t, st);
+    const dt = t.hot_since ? Math.max(0, Math.round(nowSec - t.hot_since)) : null;
+    const left = t.hot_since ? Math.max(0, Math.round(st.hot_window - (nowSec - t.hot_since))) : 0;
+    const ls = conf > 0 ? "HOT" : t.status;
+    return {...t, conf, dt, left, ls};
+  });
+
+  // Strict HOT targets (inside real matchmaking range ±28)
+  const hotStrict = live.filter(t => t.conf >= 70 && t.in_strict).sort((a,b) => (b.conf - a.conf) || (a.abs_diff - b.abs_diff));
+  const playingNow = live.filter(t => t.ls === "PLAYING").sort((a,b) => (a.est_finish_in ?? 999) - (b.est_finish_in ?? 999));
+
+  // Sound alert when a new strict HOT target appears
+  const hotNow = new Set(hotStrict.map(t => t.tag));
+  const newHot = [...hotNow].filter(tag => !prevHot.has(tag));
+  if(newHot.length) beep(true);
+  prevHot = hotNow;
+  document.title = hotStrict.length ? `(${hotStrict.length}) 🚨 DKHOL DABA!` : "CR Snipe Pro";
+
+  // BIG SNIPE BANNER
+  const bs = document.getElementById("bigstatus");
+  if(hotStrict.length){
+    const b = hotStrict[0];
+    const diff = b.elo_diff != null ? (b.elo_diff >= 0 ? `+${b.elo_diff}` : `${b.elo_diff}`) : "?";
+    const deltaTxt = b.pol_delta != null ? `${b.pol_delta>=0?"+":""}${b.pol_delta}` : "";
+    const deckImgs = (b.deck||[]).map(c => c.icon ? `<img src="${esc(c.icon)}" title="${esc(c.name)}">` : "").join("");
+    bs.className = "go";
+    bs.innerHTML = `
+      <div class="bs-top">
+        <div>
+          <div class="bs-main">🚨 DKHOL RANKED DABA — ${esc(b.name)}</div>
+          <div class="bs-sub">
+            <span class="bs-pill" style="color:var(--prime)">⭐ ELO Exact: ${b.pol_trophies} (${diff} vs nta)</span>
+            <span class="bs-pill">Akher Match: ${b.result||"?"} ${b.crowns||""} (${deltaTxt} 🏆)</span>
+            <span class="bs-pill">⏱ Sala 9bel: ${b.dt}s (ba9i ${b.left}s)</span>
+            ${b.median_gap ? `<span class="bs-pill">⚡ Requeue cycle: ~${ago(b.median_gap)}</span>` : ""}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="bs-prob">${b.conf}%</div>
+          <div style="font-size:11px;font-weight:800;color:#ffb4ae">SNIPE MATCH SCORE</div>
+        </div>
+      </div>
+      <div class="confbar"><i style="width:${b.conf}%"></i></div>
+      <div class="bs-deck">${deckImgs}</div>
+    `;
+  } else if(playingNow.length){
+    const p = playingNow[0];
+    const diff = p.elo_diff != null ? (p.elo_diff >= 0 ? `+${p.elo_diff}` : `${p.elo_diff}`) : "?";
+    bs.className = "ready";
+    bs.innerHTML = `
+      <div class="bs-top">
+        <div>
+          <div class="bs-main" style="color:var(--playing);font-size:22px">⚡ WJED YEDDEK — ${esc(p.name)} راه فوسط ماتش دابا!</div>
+          <div class="bs-sub">
+            <span class="bs-pill">⭐ ELO: ${p.pol_trophies} (${diff} vs nta)</span>
+            <span class="bs-pill" style="color:var(--playing)">⏳ المتوقع يسالي الماتش فـ ~${p.est_finish_in}s</span>
+            <span class="bs-pill">غير يسالي غادي تصوني الألارم وتدخل نيشان!</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    bs.className = "";
+    bs.innerHTML = `
+      <div class="bs-main" style="font-size:22px">⏳ كنراقبو جميع اللعابة اللي فـ Range ديالك (${c.strict ?? 0} فـ ±${st.strict_window})</div>
+      <div class="bs-sub" style="margin-top:4px;color:var(--muted)">غير يسالي شي واحد الماتش ويكون قريب لـ ELO ديالك غادي تصوني الألارم فـ أقل من ثانية 🔔</div>
+    `;
+  }
+
+  // RADAR BAR (players currently mid-battle)
+  const rad = document.getElementById("radar");
+  if(playingNow.length){
+    rad.style.display = "block";
+    document.getElementById("radlist").innerHTML = playingNow.slice(0, 6).map(p => {
+      const diff = p.elo_diff >= 0 ? `+${p.elo_diff}` : p.elo_diff;
+      return `<div class="rad-item">
+        <b>${esc(p.name)}</b>
+        <span style="color:var(--prime)">⭐${p.pol_trophies} (${diff})</span>
+        <span style="color:var(--playing)">يسالي فـ ~${p.est_finish_in}s</span>
+      </div>`;
+    }).join("");
+  } else {
+    rad.style.display = "none";
+  }
+
+  // FILTER TARGETS
+  const filtered = live.filter(t => {
+    if(filterMode === "PRIME") return t.band === "PRIME" || t.ls === "HOT";
+    if(filterMode === "STRICT") return t.in_strict || t.ls === "HOT";
+    if(filterMode === "HOT") return t.ls === "HOT" || t.ls === "PLAYING";
+    return true;
+  });
+
+  const order = {HOT:0, PLAYING:1, ACTIVE:2, COLD:3, OUT:4};
+  filtered.sort((a,b) =>
+    (order[a.ls] - order[b.ls]) ||
+    (b.conf - a.conf) ||
+    (a.abs_diff - b.abs_diff) ||
+    ((a.last_battle_ago ?? 999999) - (b.last_battle_ago ?? 999999))
+  );
+
+  document.getElementById("targets").innerHTML = filtered.map(t => {
+    const diff = t.elo_diff != null ? (t.elo_diff >= 0 ? `+${t.elo_diff}` : `${t.elo_diff}`) : "?";
+    const deltaHtml = t.pol_delta != null && t.pol_delta !== 0
+      ? `<span class="delta ${t.pol_delta>0?'pos':'neg'}">${t.pol_delta>0?'+':''}${t.pol_delta} 🏆</span>` : "";
+    const deckHtml = (t.deck||[]).map(c => c.icon ? `<img src="${esc(c.icon)}" title="${esc(c.name)}" loading="lazy">` : "").join("");
+
+    let statusLine = "";
+    if(t.ls === "HOT"){
+      statusLine = `<div class="snipe-line">
+        <div><span class="pct">${t.conf}%</span> <span style="font-size:12px;color:#ffb4ae">إحتمال يطيح معاك دابا</span></div>
+        <div class="grade">سالا قبل ${t.dt}s · باقي ${t.left}s</div>
+      </div>`;
+    } else if(t.ls === "PLAYING"){
+      statusLine = `<div class="snipe-line" style="background:rgba(255,171,0,.12);border-color:rgba(255,171,0,.4)">
+        <div style="color:var(--playing);font-weight:800;font-size:13px">📡 كيلعب ماتش دابا (غادي يسالي فـ ~${t.est_finish_in}s)</div>
+      </div>`;
+    }
+
+    let hit = "";
+    if(t.sniped_ago != null && t.sniped_ago < 900)
+      hit = `<div class="hit ok">✅ SNIPED! طاح معاك فـ الماتش قبل ${ago(t.sniped_ago)}</div>`;
+    else if(t.missed_ago != null && t.missed_ago < 180)
+      hit = `<div class="hit miss">❌ دخل فـ ماتش مع واحد آخر قبل ${ago(t.missed_ago)}</div>`;
+
+    const habit = t.median_gap != null
+      ? (t.median_gap <= 260 ? `⚡ كيعاود يدخل دغيا (~${ago(t.median_gap)})` : `⏱ Gap ~${ago(t.median_gap)}`)
+      : "";
+
+    return `<div class="tcard ${t.ls}">
+      <button class="rm" onclick="rmTarget('${esc(t.tag)}')">✕</button>
+      <div class="thead">
+        <div>
+          <div class="tname">
+            ${esc(t.name)}
+            <span class="elo-badge ${t.band}">⭐ ${t.pol_trophies ?? "?"} (${diff})</span>
+            ${deltaHtml}
+          </div>
+          <div class="tsub">${esc(t.tag)} · ${t.band === "PRIME" ? "💎 Prime Range" : t.band === "STRICT" ? "🎯 In MM Range" : "Outer ±60"} · ${t.games_last_hour||0} games/1h</div>
+        </div>
+        <span class="badge ${t.ls}">${t.ls}</span>
+      </div>
+      ${statusLine}
+      <div class="meta-line">
+        <span>آخر ماتش: <b class="${t.result||''}">${t.result||'?'}</b> ${t.crowns||''} · قبل ${ago(t.last_battle_ago)}</span>
+        <span>${habit}</span>
+      </div>
+      ${hit}
+      <div class="deckrow">${deckHtml}</div>
+    </div>`;
+  }).join("");
+}
+
+async function tick(){
+  try{
+    state = await (await fetch("/api/state", {cache: "no-store"})).json();
+    render();
+  }catch(e){}
+}
+async function addTarget(){
+  const tag = document.getElementById("addtag").value.trim();
+  if(!tag) return;
+  await fetch("/api/targets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tag})});
+  document.getElementById("addtag").value = "";
+  tick();
+}
+async function rmTarget(tag){
+  await fetch("/api/targets/"+encodeURIComponent(tag),{method:"DELETE"});
+  tick();
+}
+
+tick();
+setInterval(tick, 1000);   // poll backend every 1s for instant 0-lag updates
+setInterval(render, 500);  // smooth 0.5s countdowns
+</script>
+</body>
+</html>
